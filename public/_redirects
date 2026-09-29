@@ -1,0 +1,5 @@
+# Dynamic routes are exported as one HTML shell each; serve it for any id (deep links, refresh).
+# Target the extension-less path: Cloudflare Pages redirects "*.html" to it ("pretty URLs"),
+# so pointing at "[id].html" would redirect to "/product/[id]", match this rule again and loop.
+/product/*  /product/[id]  200
+/claim/*    /claim/[id]    200

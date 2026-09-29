@@ -1,0 +1,10 @@
+# Security headers for the web build (Cloudflare Pages / Netlify format; copied into dist/ by `expo export`).
+# Tested against the production export. Notes:
+# - script-src has NO 'unsafe-eval'. The sha256 is Expo Router's inline hydration flag
+#   (`globalThis.__EXPO_ROUTER_HYDRATE__=true;`); recompute it if an Expo upgrade changes that script.
+# - 'wasm-unsafe-eval' only allows WebAssembly (expo-camera's web QR scanner), not JavaScript eval.
+# - The scanner's .wasm is self-hosted at /zxing/ (scripts/copy-zxing-wasm.js); Supabase is the API, auth and file storage.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8=' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tpqxdlafxoxdxmfetykt.supabase.co; font-src 'self' data:; connect-src 'self' blob: data: https://tpqxdlafxoxdxmfetykt.supabase.co; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
