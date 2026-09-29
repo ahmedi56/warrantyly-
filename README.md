@@ -9,6 +9,7 @@ Built with Expo (React Native + TypeScript) and Expo Router.
 
 ```bash
 npm install
+cp .env.example .env   # then fill in your Supabase URL + publishable key
 npx expo start
 ```
 
