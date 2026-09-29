@@ -4,7 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ArrowRight, BellRing, Headphones, Laptop, Refrigerator, ScanLine, ShieldCheck, Smartphone, Wrench, type LucideIcon } from '@/components/icons';
+import { BrandMark } from '@/components/brand-mark';
+import { ArrowRight, BellRing, Headphones, Laptop, Refrigerator, ScanLine, Smartphone, Wrench, type LucideIcon } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { Button, T } from '@/components/ui';
 import { useStore } from '@/data/store';
@@ -16,7 +17,7 @@ const features: { icon: LucideIcon; label: string; tint: string }[] = [
   { icon: Wrench, label: 'Repair help & claim support', tint: '#FBBF24' },
 ];
 
-/** Orbit of product tiles around the shield — replaces the 3D render with crisp vector icons. */
+/** Orbit of product tiles around the logo — replaces the 3D render with crisp vector icons. */
 const orbit: { icon: LucideIcon; top: number; left: number; rotate: string }[] = [
   { icon: Laptop, top: 8, left: 190, rotate: '10deg' },
   { icon: Refrigerator, top: 30, left: 30, rotate: '-8deg' },
@@ -42,9 +43,9 @@ export default function Welcome() {
               <Icon size={30} color="#DCE6FF" strokeWidth={1.6} />
             </View>
           ))}
-          <LinearGradient colors={gradients.primary} style={styles.shield}>
-            <ShieldCheck size={52} color={colors.white} strokeWidth={2} />
-          </LinearGradient>
+          <View style={styles.mark}>
+            <BrandMark size={112} />
+          </View>
         </View>
 
         <View style={{ alignItems: 'center' }}>
@@ -97,13 +98,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  shield: {
-    width: 104,
-    height: 104,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 10px 30px rgba(59, 130, 246, 0.6)',
+  mark: {
+    borderRadius: 26,
+    boxShadow: '0 10px 30px rgba(59, 130, 246, 0.55)',
   },
   features: {
     gap: 14,
