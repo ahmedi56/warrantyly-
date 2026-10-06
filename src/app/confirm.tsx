@@ -10,7 +10,9 @@ import { PageTitle } from '@/components/page-title';
 import { categoryIcon } from '@/components/product';
 import { Badge, Button, Card, Header, resetTo, Screen, T } from '@/components/ui';
 import { useStore } from '@/data/store';
+import { savePhoto } from '@/lib/photos';
 import { CATEGORIES, type Category } from '@/data/types';
+import { isValidISO, parsePrice } from '@/data/validation';
 import { expiryDate, formatDate, toISO } from '@/data/warranty';
 import { colors, radius, space } from '@/theme';
 
@@ -18,8 +20,6 @@ const WARRANTY_OPTIONS = [6, 12, 18, 24, 36, 48, 60].map((m) => ({
   label: m % 12 === 0 ? `${m / 12} Year${m === 12 ? '' : 's'}` : `${m} Months`,
   value: m,
 }));
-
-const isValidISO = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(s).getTime());
 
 function warn(msg: string) {
   if (Platform.OS === 'web') window.alert(msg);
@@ -36,6 +36,7 @@ export default function Confirm() {
   const [months, setMonths] = useState(draft?.warrantyMonths ?? 24);
   const [price, setPrice] = useState(draft?.price != null ? String(draft.price) : '');
   const [photoUri, setPhotoUri] = useState(draft?.photoUri);
+  const [saving, setSaving] = useState(false);
 
   if (!draft) return <Redirect href="/(tabs)" />;
 
@@ -47,9 +48,17 @@ export default function Confirm() {
     if (!res.canceled) setPhotoUri(res.assets[0].uri);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!name.trim()) return warn('Please enter a product name.');
-    if (!isValidISO(purchaseDate)) return warn('Purchase date must look like 2026-09-26.');
+    if (!isValidISO(purchaseDate)) return warn('Purchase date must be a real date, like 2026-09-26.');
+    if (purchaseDate > toISO(new Date())) return warn('Purchase date can’t be in the future.');
+    const parsedPrice = price.trim() ? parsePrice(price) : undefined;
+    if (price.trim() && parsedPrice === undefined) return warn('Enter the price as a number, like 699 or 699.50.');
+
+    setSaving(true);
+    // Camera/picker files are temporary (cache folder on phones, blob: URLs on web).
+    const savedPhoto = await savePhoto(photoUri);
+    const savedReceipt = draft.receiptUri === photoUri ? savedPhoto : await savePhoto(draft.receiptUri);
     const product = addProduct({
       name: name.trim(),
       brand: brand.trim() || 'Unknown',
@@ -57,10 +66,10 @@ export default function Confirm() {
       category,
       purchaseDate,
       warrantyMonths: months,
-      price: price ? Number(price.replace(',', '.')) : undefined,
+      price: parsedPrice,
       currency: draft.currency ?? 'TND',
-      photoUri,
-      receiptUri: draft.receiptUri,
+      photoUri: savedPhoto,
+      receiptUri: savedReceipt,
       reminderDays: settings.defaultReminderDays,
     });
     setDraft(null);
@@ -70,7 +79,7 @@ export default function Confirm() {
 
   return (
     <Screen
-      footer={<Button label="Save Product" iconRight={ArrowRight} onPress={save} />}
+      footer={<Button label={saving ? 'Saving…' : 'Save Product'} iconRight={ArrowRight} disabled={saving} onPress={save} />}
       contentStyle={{ paddingBottom: space.xl }}>
       <PageTitle title={fromAI ? 'Confirm product' : 'Add product'} />
       <Header
@@ -98,10 +107,10 @@ export default function Confirm() {
       </View>
 
       <Card style={{ marginTop: space.lg }}>
-        <Field label="Product name" value={name} onChangeText={setName} placeholder="e.g. BrewMaster Pro" />
-        <Field label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. BrewMaster" />
+        <Field label="Product name" value={name} onChangeText={setName} placeholder="e.g. BrewMaster Pro" maxLength={200} />
+        <Field label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. BrewMaster" maxLength={120} />
         <SelectField<Category> label="Category" value={category} onChange={setCategory} options={CATEGORIES.map((c) => ({ label: c, value: c }))} />
-        <Field label="Store" value={store} onChangeText={setStore} placeholder="Where did you buy it?" />
+        <Field label="Store" value={store} onChangeText={setStore} placeholder="Where did you buy it?" maxLength={120} />
         <Field
           label="Purchase date"
           value={purchaseDate}

@@ -1,6 +1,6 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Share, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { CircleCheck, CircleX, MessageCircle, PencilLine, Send, ShieldCheck, Wrench } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
@@ -8,6 +8,7 @@ import { CoverageRing } from '@/components/product';
 import { Button, Card, Chip, goBack, Header, IconTile, Screen, T, textStyles } from '@/components/ui';
 import { useProduct, useStore } from '@/data/store';
 import { daysLeft, expiryDate, formatDate, formatPrice, statusOf } from '@/data/warranty';
+import { shareText } from '@/lib/share';
 import { colors, radius, space } from '@/theme';
 
 const QUICK_ISSUES = ['Won’t turn on', 'Leaking', 'Strange noise', 'Error code', 'Broken part'];
@@ -57,7 +58,7 @@ export default function ClaimFlow() {
 
   if (submitted) {
     return (
-      <Screen footer={<Button label="Share with store" icon={Send} onPress={() => Share.share({ message: summary }).catch(() => {})} />}>
+      <Screen footer={<Button label="Share with store" icon={Send} onPress={() => shareText({ title: `Warranty claim — ${product.name}`, message: summary })} />}>
         <PageTitle title={`Claim ready · ${product.name}`} />
         <Header title="Claim ready" subtitle="Send this to the store or manufacturer" />
         <Card style={styles.productCard}>
@@ -109,6 +110,7 @@ export default function ClaimFlow() {
               onChangeText={setIssue}
               placeholder="e.g. The machine leaks from the bottom after brewing"
               placeholderTextColor={colors.textFaint}
+              maxLength={5000}
               multiline
               style={[textStyles.input, { flex: 1, minHeight: 70, textAlignVertical: 'top' }]}
             />

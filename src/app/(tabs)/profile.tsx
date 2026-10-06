@@ -1,21 +1,27 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Alert, Linking, Platform, Pressable, Share, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { SelectField } from '@/components/fields';
 import { Bell, BellRing, ChevronRight, Cloud, CloudOff, Download, LogIn, LogOut, Package, RefreshCw, RotateCcw, Ticket, UserX, type LucideIcon } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { Button, Card, Divider, IconTile, Screen, SectionTitle, T } from '@/components/ui';
-import { planReminders } from '@/data/reminders';
+import { planReminders, REMINDER_OPTIONS } from '@/data/reminders';
 import { useStore } from '@/data/store';
 import type { Settings } from '@/data/types';
 import { formatDate, statusOf } from '@/data/warranty';
+import { shareText } from '@/lib/share';
 import { notificationsSupported, requestPermission, sendTestReminder } from '@/notifications';
 import { colors, gradients, space } from '@/theme';
 
 function Row({ icon, label, value, onPress, right }: { icon: LucideIcon; label: string; value?: string | number; onPress?: () => void; right?: React.ReactNode }) {
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}>
       <IconTile icon={icon} size={36} fg={colors.text} bg={colors.cardAlt} />
       <T weight="medium" style={{ flex: 1 }}>
         {label}
@@ -111,7 +117,7 @@ export default function Profile() {
     });
 
   const exportData = () => {
-    Share.share({ title: 'Warrantyly export', message: JSON.stringify({ products, claims }, null, 2) }).catch(() => {});
+    shareText({ title: 'Warrantyly export', message: JSON.stringify({ products, claims }, null, 2), filename: 'warrantyly-export.json' });
   };
 
   return (
@@ -214,7 +220,7 @@ export default function Profile() {
             label="Default reminder"
             value={settings.defaultReminderDays}
             onChange={(defaultReminderDays) => updateSettings({ defaultReminderDays })}
-            options={[30, 14, 7, 3, 1].map((d) => ({ label: `${d} day${d === 1 ? '' : 's'} before expiry`, value: d }))}
+            options={REMINDER_OPTIONS}
           />
         </View>
       </Card>

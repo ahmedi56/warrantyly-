@@ -27,7 +27,7 @@ import { PageTitle } from '@/components/page-title';
 import { CoverageRing, categoryIcon } from '@/components/product';
 import { Badge, Button, Card, Divider, goBack, IconButton, IconTile, T } from '@/components/ui';
 import { guides } from '@/data/guides';
-import { nextReminderFor } from '@/data/reminders';
+import { nextReminderFor, REMINDER_OPTIONS } from '@/data/reminders';
 import { useProduct, useStore } from '@/data/store';
 import { daysLeft, expiryDate, formatDate, formatPrice, formatWarranty, humanizeDays, statusOf, statusStyle } from '@/data/warranty';
 import { colors, radius, space } from '@/theme';
@@ -157,7 +157,7 @@ export default function ProductDetail() {
                     label="Remind me"
                     value={product.reminderDays}
                     onChange={(reminderDays) => updateProduct(product.id, { reminderDays })}
-                    options={[60, 30, 14, 7, 1].map((n) => ({ label: `${n} day${n === 1 ? '' : 's'} before expiry`, value: n }))}
+                    options={REMINDER_OPTIONS}
                   />
                   <T size={12} color={colors.textMuted} style={{ marginTop: -6 }}>
                     {reminderNote}

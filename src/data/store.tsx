@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
+import { deletePhoto } from '@/lib/photos';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 import { demoProducts, isDemoId } from './demo';
@@ -72,6 +73,9 @@ function enqueue(state: State, op: Op): Op[] {
   if (!state.userId) return state.outbox;
   return [...state.outbox.filter((o) => !sameOp(o, op)), op];
 }
+
+/** A device copy worth preferring over the signed cloud URL. `blob:` URLs die on page reload. */
+const isKeptLocally = (uri?: string) => isLocalUri(uri) && !uri!.startsWith('blob:');
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -178,8 +182,8 @@ export function reducer(state: State, action: Action): State {
         if (!mine) return p;
         return {
           ...p,
-          photoUri: isLocalUri(mine.photoUri) && mine.photoPath === p.photoPath ? mine.photoUri : p.photoUri,
-          receiptUri: isLocalUri(mine.receiptUri) && mine.receiptPath === p.receiptPath ? mine.receiptUri : p.receiptUri,
+          photoUri: isKeptLocally(mine.photoUri) && mine.photoPath === p.photoPath ? mine.photoUri : p.photoUri,
+          receiptUri: isKeptLocally(mine.receiptUri) && mine.receiptPath === p.receiptPath ? mine.receiptUri : p.receiptUri,
         };
       });
       return { ...state, products, claims: action.claims, syncStatus: 'idle', lastSyncedAt: new Date().toISOString() };
@@ -309,7 +313,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return product;
       },
       updateProduct: (id, patch) => dispatch({ type: 'updateProduct', id, patch }),
-      deleteProduct: (id) => dispatch({ type: 'deleteProduct', id }),
+      deleteProduct: (id) => {
+        const p = state.products.find((x) => x.id === id);
+        deletePhoto(p?.photoUri);
+        if (p?.receiptUri !== p?.photoUri) deletePhoto(p?.receiptUri);
+        dispatch({ type: 'deleteProduct', id });
+      },
       addClaim: (productId, issue) => {
         const claim: Claim = { id: Crypto.randomUUID(), productId, issue, createdAt: new Date().toISOString(), status: 'draft' };
         dispatch({ type: 'addClaim', claim });

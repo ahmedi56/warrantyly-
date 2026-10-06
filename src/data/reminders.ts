@@ -65,3 +65,9 @@ export function planReminders(products: Product[], now = new Date()): PlannedRem
 export function nextReminderFor(product: Product, now = new Date()) {
   return planReminders([product], now)[0];
 }
+
+/** Choices for "remind me N days before expiry", shared by Profile (default) and each product. */
+export const REMINDER_OPTIONS = [60, 30, 14, 7, 3, 1].map((n) => ({
+  label: `${n} day${n === 1 ? '' : 's'} before expiry`,
+  value: n,
+}));

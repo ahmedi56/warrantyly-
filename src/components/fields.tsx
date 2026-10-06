@@ -13,6 +13,7 @@ export function Field({
   keyboardType,
   icon: Icon,
   hint,
+  maxLength,
 }: {
   label: string;
   value: string;
@@ -21,6 +22,8 @@ export function Field({
   keyboardType?: KeyboardTypeOptions;
   icon?: LucideIcon;
   hint?: string;
+  /** Mirror the database limit so the value can't be rejected later during sync. */
+  maxLength?: number;
 }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -35,6 +38,7 @@ export function Field({
           placeholder={placeholder}
           placeholderTextColor={colors.textFaint}
           keyboardType={keyboardType}
+          maxLength={maxLength}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={[textStyles.input, styles.input]}
