@@ -69,7 +69,7 @@ export default function ProductDetail() {
     ? 'Reminders are turned off in Profile.'
     : next
       ? `Next reminder: ${formatDate(next.date)} at 9:00`
-      : 'No upcoming reminders — this warranty has ended.';
+      : 'No upcoming reminders. This warranty has ended.';
 
   const remove = () => {
     const doIt = () => {

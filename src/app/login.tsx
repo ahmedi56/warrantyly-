@@ -141,7 +141,7 @@ export default function Login() {
         <PageTitle title={step === 'email' ? 'Sign in' : 'Enter your code'} />
         <Header
           title={step === 'email' ? 'Sign in or create account' : 'Check your email'}
-          subtitle={step === 'email' ? 'We’ll email you a code — no password needed.' : `We sent a code to ${email}`}
+          subtitle={step === 'email' ? 'We’ll email you a code. No password needed.' : `We sent a code to ${email}`}
           onBack={step === 'code' ? backToEmail : undefined}
         />
 

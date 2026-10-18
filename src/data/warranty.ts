@@ -83,6 +83,6 @@ export function formatWarranty(months: number) {
 }
 
 export function formatPrice(p: Pick<Product, 'price' | 'currency'>) {
-  if (p.price == null) return '—';
+  if (p.price == null) return 'Not set';
   return `${p.price.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${p.currency}`;
 }

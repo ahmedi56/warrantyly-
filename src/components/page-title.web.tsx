@@ -29,7 +29,7 @@ export function SiteMeta() {
       <meta name="theme-color" content="#0B1020" />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="Warrantyly" />
-      <meta property="og:title" content="Warrantyly — your warranty assistant" />
+      <meta property="og:title" content="Warrantyly: your warranty assistant" />
       <meta property="og:description" content={DESCRIPTION} />
       <meta property="og:image" content={IMAGE} />
       <meta property="og:image:type" content="image/jpeg" />
@@ -38,7 +38,7 @@ export function SiteMeta() {
       <meta property="og:image:alt" content="Warrantyly: all your product warranties in one place" />
       {SITE_URL ? <meta property="og:url" content={SITE_URL} /> : null}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content="Warrantyly — your warranty assistant" />
+      <meta name="twitter:title" content="Warrantyly: your warranty assistant" />
       <meta name="twitter:description" content={DESCRIPTION} />
       <meta name="twitter:image" content={IMAGE} />
     </Head>

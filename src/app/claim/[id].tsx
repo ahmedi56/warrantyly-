@@ -45,7 +45,7 @@ export default function ClaimFlow() {
 
   const covered = statusOf(product) !== 'expired';
   const summary = [
-    `Warranty claim — ${product.name}`,
+    `Warranty claim: ${product.name}`,
     `Brand: ${product.brand}`,
     product.serial ? `Serial: ${product.serial}` : null,
     `Purchased: ${formatDate(product.purchaseDate)} at ${product.store} (${formatPrice(product)})`,
@@ -59,7 +59,7 @@ export default function ClaimFlow() {
 
   if (submitted) {
     return (
-      <Screen footer={<Button label="Share with store" icon={Send} onPress={() => shareText({ title: `Warranty claim — ${product.name}`, message: summary })} />}>
+      <Screen footer={<Button label="Share with store" icon={Send} onPress={() => shareText({ title: `Warranty claim: ${product.name}`, message: summary })} />}>
         <PageTitle title={`Claim ready · ${product.name}`} />
         <Header title="Claim ready" subtitle="Send this to the store or manufacturer" />
         <Card style={styles.productCard}>
@@ -124,7 +124,7 @@ export default function ClaimFlow() {
             <T weight="medium" size={14} color={covered ? colors.success : colors.danger} style={{ flex: 1 }}>
               {covered
                 ? `${product.name} is covered until ${formatDate(expiryDate(product))}`
-                : `Warranty ended on ${formatDate(expiryDate(product))} — paid repair options only`}
+                : `Warranty ended on ${formatDate(expiryDate(product))}. Paid repair options only`}
             </T>
           </View>
         </Step>

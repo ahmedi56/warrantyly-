@@ -198,7 +198,7 @@ export default function Profile() {
           {!notificationsSupported
             ? 'Reminders work in the phone app.'
             : !settings.notifications
-              ? 'Off — you won’t be reminded before warranties end.'
+              ? 'Off. You won’t be reminded before warranties end.'
               : nextReminder
                 ? `Next: ${nextProduct?.name ?? 'product'} · ${formatDate(nextReminder.date)}`
                 : 'No upcoming reminders.'}
