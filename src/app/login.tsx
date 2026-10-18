@@ -219,6 +219,13 @@ export default function Login() {
                       style={[textStyles.input, styles.field]}
                     />
                   </View>
+                  <Button label="Send code" iconRight={ArrowRight} disabled={busy} onPress={sendCode} style={{ marginTop: space.lg }} />
+                  {!googleEnabled ? (
+                    <>
+                      {divider}
+                      {googleButton}
+                    </>
+                  ) : null}
                 </View>
               ) : (
                 <View style={{ marginTop: space.xl }}>
@@ -254,6 +261,7 @@ export default function Login() {
                       </T>
                     </Pressable>
                   </View>
+                  <Button label="Verify & continue" iconRight={ArrowRight} disabled={busy} onPress={verify} style={{ marginTop: space.lg }} />
                 </View>
               )}
 
@@ -266,18 +274,6 @@ export default function Login() {
           </ScrollView>
 
           <View style={{ gap: space.xs }}>
-            <Button
-              label={step === 'email' ? 'Send code' : 'Verify & continue'}
-              iconRight={ArrowRight}
-              disabled={busy}
-              onPress={step === 'email' ? sendCode : verify}
-            />
-            {step === 'email' && !googleEnabled ? (
-              <>
-                {divider}
-                {googleButton}
-              </>
-            ) : null}
             {step === 'email' ? (
               <Pressable onPress={continueAsGuest} accessibilityRole="button" style={styles.guest}>
                 <T weight="medium" size={14} color={MUTED}>
