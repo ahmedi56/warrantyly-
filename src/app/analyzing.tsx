@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 
-import { CircleCheck, FileSearch, Loader, ShieldCheck, Sparkles } from '@/components/icons';
+import { AssistantMark } from '@/components/brand-mark';
+import { CircleCheck, FileSearch, Loader, ShieldCheck } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { Card, Header, Screen, T } from '@/components/ui';
 import { mockExtraction } from '@/data/demo';
@@ -49,14 +50,14 @@ export default function Analyzing() {
   return (
     <Screen scroll={false}>
       <PageTitle title="Reading receipt" />
-      <Header title="AI is analyzing…" subtitle="Extracting product information from your receipt" />
+      <Header title="Reading your receipt…" subtitle="Finding the product, store, purchase date and warranty" />
 
       <View style={styles.art}>
         <Animated.View style={[styles.halo, { transform: [{ scale }] }]} />
         <View style={styles.doc}>
           <FileSearch size={48} color={colors.primary} strokeWidth={1.7} />
           <View style={styles.spark}>
-            <Sparkles size={16} color={colors.white} />
+            <AssistantMark size={34} />
           </View>
         </View>
       </View>
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
   art: { height: 190, alignItems: 'center', justifyContent: 'center' },
   halo: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: colors.primarySoft },
   doc: { width: 110, height: 110, borderRadius: 32, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(37, 99, 235, 0.2)' },
-  spark: { position: 'absolute', right: -6, bottom: -6, width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.bg },
+  spark: { position: 'absolute', right: -10, bottom: -10, borderRadius: 10, borderWidth: 3, borderColor: colors.bg },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: space.lg },
   track: { flex: 1, height: 8, borderRadius: radius.pill, backgroundColor: colors.line, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: radius.pill, backgroundColor: colors.primary },

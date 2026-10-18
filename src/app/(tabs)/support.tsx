@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { AssistantMark } from '@/components/brand-mark';
 import { BookOpen, ChevronRight, FileText, MessageCircle, Wrench } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { CoverageRing } from '@/components/product';
@@ -14,7 +15,7 @@ export default function Support() {
 
   const actions = [
     { icon: Wrench, title: 'Something broke?', sub: 'Check coverage and start a claim', fg: colors.danger, bg: colors.dangerSoft, go: () => router.push('/products') },
-    { icon: MessageCircle, title: 'Ask AI Support', sub: 'Instant help for your product', fg: colors.violet, bg: colors.violetSoft, go: () => router.push('/assistant') },
+    { icon: MessageCircle, assistant: true, title: 'Ask Warrantyly', sub: 'Quick fixes for your products', fg: colors.primary, bg: colors.primarySoft, go: () => router.push('/assistant') },
     { icon: BookOpen, title: 'Guides & Tutorials', sub: 'Maintenance and troubleshooting', fg: colors.primary, bg: colors.primarySoft, go: () => router.push('/guides') },
   ];
 
@@ -31,7 +32,7 @@ export default function Support() {
       <View style={{ gap: space.sm, marginTop: space.xl }}>
         {actions.map((a) => (
           <Card key={a.title} onPress={a.go} style={styles.row}>
-            <IconTile icon={a.icon} fg={a.fg} bg={a.bg} />
+            {'assistant' in a ? <AssistantMark size={44} /> : <IconTile icon={a.icon} fg={a.fg} bg={a.bg} />}
             <View style={{ flex: 1 }}>
               <T weight="semibold">{a.title}</T>
               <T size={13} color={colors.textMuted}>

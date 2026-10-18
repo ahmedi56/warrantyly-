@@ -2,10 +2,11 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
-import { CircleCheck, CircleX, MessageCircle, PencilLine, Send, ShieldCheck, Wrench } from '@/components/icons';
+import { AssistantMark } from '@/components/brand-mark';
+import { CircleCheck, CircleX, PencilLine, Send, ShieldCheck, Wrench } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { CoverageRing } from '@/components/product';
-import { Button, Card, Chip, goBack, Header, IconTile, Screen, T, textStyles } from '@/components/ui';
+import { Button, Card, Chip, goBack, Header, Screen, T, textStyles } from '@/components/ui';
 import { useProduct, useStore } from '@/data/store';
 import { daysLeft, expiryDate, formatDate, formatPrice, statusOf } from '@/data/warranty';
 import { shareText } from '@/lib/share';
@@ -130,9 +131,9 @@ export default function ClaimFlow() {
 
         <Step n={3} title="Get solutions" sub="Repair options and next steps" done={false}>
           <Card flat onPress={() => router.push('/assistant')} style={styles.tryFirst}>
-            <IconTile icon={MessageCircle} size={38} fg={colors.violet} bg={colors.card} />
+            <AssistantMark size={38} />
             <T size={13} color={colors.textMuted} style={{ flex: 1 }}>
-              Try a quick fix with AI Support first — many issues are solved in a minute.
+              Ask Warrantyly for a quick fix first. Many problems are solved in a minute.
             </T>
           </Card>
         </Step>
@@ -146,7 +147,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   textarea: { flexDirection: 'row', gap: 8, backgroundColor: colors.cardAlt, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, padding: space.md },
   coverage: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: space.md, borderRadius: radius.md },
-  tryFirst: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.violetSoft, padding: space.md },
+  tryFirst: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primarySoft, padding: space.md },
   productCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   summary: { marginTop: space.md, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.line, padding: space.lg },
 });

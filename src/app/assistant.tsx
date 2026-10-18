@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ArrowUp, Bot, ChevronLeft } from '@/components/icons';
+import { AssistantMark } from '@/components/brand-mark';
+import { ArrowUp, ChevronLeft } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { goBack, IconButton, T, textStyles } from '@/components/ui';
 import { assistantAnswers, fallbackAnswer } from '@/data/guides';
@@ -39,18 +40,16 @@ export default function Assistant() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom']}>
-      <PageTitle title="AI support" />
+      <PageTitle title="Ask Warrantyly" />
       <View style={styles.header}>
         <IconButton icon={ChevronLeft} label="Back" onPress={() => goBack()} />
-        <View style={styles.bot}>
-          <Bot size={22} color={colors.white} />
-        </View>
+        <AssistantMark size={42} />
         <View style={{ flex: 1 }}>
           <T weight="bold" size={17}>
-            Ask AI Support
+            Ask Warrantyly
           </T>
-          <T size={12} color={colors.success}>
-            ● Online · replies instantly
+          <T size={12} color={colors.textMuted}>
+            Help with your products
           </T>
         </View>
       </View>
@@ -105,7 +104,6 @@ export default function Assistant() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: space.xl, paddingVertical: space.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  bot: { width: 42, height: 42, borderRadius: 14, backgroundColor: colors.violet, alignItems: 'center', justifyContent: 'center' },
   bubble: { maxWidth: '84%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18 },
   user: { alignSelf: 'flex-end', backgroundColor: colors.primary, borderBottomRightRadius: 6 },
   ai: { alignSelf: 'flex-start', backgroundColor: colors.card, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: colors.line },

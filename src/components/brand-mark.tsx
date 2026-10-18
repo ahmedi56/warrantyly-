@@ -1,4 +1,13 @@
+import { useId } from 'react';
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+
+/**
+ * SVG gradient ids are global on web: with a fixed id, every copy of the mark points at the first
+ * one in the page, and if that copy sits in a hidden screen the gradient paints nothing.
+ */
+function useSvgId(prefix: string) {
+  return prefix + useId().replace(/[^a-zA-Z0-9]/g, '');
+}
 
 /**
  * The Warrantyly logo: a "W" drawn as two linked check marks inside the coverage ring,
@@ -15,19 +24,20 @@ const DOT = { x: C + R * Math.cos(END), y: C + R * Math.sin(END) };
 const W = 'M300 512 L402 626 L500 508 L598 626 L740 414';
 
 export function BrandMark({ size = 120, tile = true }: { size?: number; tile?: boolean }) {
+  const id = useSvgId('bm');
   return (
     <Svg width={size} height={size} viewBox="0 0 1024 1024">
       <Defs>
-        <LinearGradient id="bm-bg" x1="0" y1="0" x2="1" y2="1">
+        <LinearGradient id={`${id}-bg`} x1="0" y1="0" x2="1" y2="1">
           <Stop offset="0" stopColor="#0B1020" />
           <Stop offset="0.55" stopColor="#132057" />
           <Stop offset="1" stopColor="#1D4ED8" />
         </LinearGradient>
-        <RadialGradient id="bm-hi" cx="0.22" cy="0.12" r="0.75">
+        <RadialGradient id={`${id}-hi`} cx="0.22" cy="0.12" r="0.75">
           <Stop offset="0" stopColor="#60A5FA" stopOpacity={0.45} />
           <Stop offset="1" stopColor="#60A5FA" stopOpacity={0} />
         </RadialGradient>
-        <LinearGradient id="bm-arc" x1="0.1" y1="0" x2="0.9" y2="1">
+        <LinearGradient id={`${id}-arc`} x1="0.1" y1="0" x2="0.9" y2="1">
           <Stop offset="0" stopColor="#60A5FA" />
           <Stop offset="0.6" stopColor="#38BDF8" />
           <Stop offset="1" stopColor="#34D399" />
@@ -35,8 +45,8 @@ export function BrandMark({ size = 120, tile = true }: { size?: number; tile?: b
       </Defs>
       {tile ? (
         <>
-          <Rect width={1024} height={1024} rx={232} fill="url(#bm-bg)" />
-          <Rect width={1024} height={1024} rx={232} fill="url(#bm-hi)" />
+          <Rect width={1024} height={1024} rx={232} fill={`url(#${id}-bg)`} />
+          <Rect width={1024} height={1024} rx={232} fill={`url(#${id}-hi)`} />
         </>
       ) : null}
       <Circle cx={C} cy={C} r={R} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={RING} />
@@ -45,7 +55,7 @@ export function BrandMark({ size = 120, tile = true }: { size?: number; tile?: b
         cy={C}
         r={R}
         fill="none"
-        stroke="url(#bm-arc)"
+        stroke={`url(#${id}-arc)`}
         strokeWidth={RING}
         strokeLinecap="round"
         strokeDasharray={`${CIRC * ACTIVE} ${CIRC}`}
@@ -54,6 +64,37 @@ export function BrandMark({ size = 120, tile = true }: { size?: number; tile?: b
       <Circle cx={DOT.x} cy={DOT.y} r={RING * 0.95} fill="#34D399" />
       <Circle cx={DOT.x} cy={DOT.y} r={RING * 0.42} fill="#0B1020" />
       <Path d={W} fill="none" stroke="#FFFFFF" strokeWidth={66} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/**
+ * The assistant's icon ("Ask Warrantyly"): the logo's coverage ring turned into a speech bubble,
+ * with three typing dots; the middle one is the brand's mint dot. 1024 grid, like BrandMark.
+ */
+export function AssistantMark({ size = 42 }: { size?: number }) {
+  const id = useSvgId('am');
+  return (
+    <Svg width={size} height={size} viewBox="0 0 1024 1024" accessible={false}>
+      <Defs>
+        <LinearGradient id={`${id}-arc`} x1="0.1" y1="0" x2="0.9" y2="1">
+          <Stop offset="0" stopColor="#60A5FA" />
+          <Stop offset="0.6" stopColor="#38BDF8" />
+          <Stop offset="1" stopColor="#34D399" />
+        </LinearGradient>
+      </Defs>
+      <Rect width={1024} height={1024} rx={232} fill="#132057" />
+      <Path
+        d="M300 760 A300 300 0 1 1 420 815 L270 860 Z"
+        fill="none"
+        stroke={`url(#${id}-arc)`}
+        strokeWidth={56}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <Circle cx={372} cy={500} r={50} fill="#FFFFFF" />
+      <Circle cx={512} cy={500} r={50} fill="#34D399" />
+      <Circle cx={652} cy={500} r={50} fill="#FFFFFF" />
     </Svg>
   );
 }

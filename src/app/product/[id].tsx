@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AssistantMark } from '@/components/brand-mark';
 import { SelectField } from '@/components/fields';
 import {
   Bell,
@@ -16,7 +17,6 @@ import {
   Clock3,
   FileText,
   Hash,
-  MessageCircle,
   Store,
   Trash2,
   Wallet,
@@ -197,9 +197,9 @@ export default function ProductDetail() {
                 <ChevronRight size={18} color={colors.textFaint} />
               </Card>
               <Card onPress={() => router.push('/assistant')} style={styles.listRow}>
-                <IconTile icon={MessageCircle} fg={colors.violet} bg={colors.violetSoft} />
+                <AssistantMark size={44} />
                 <View style={{ flex: 1 }}>
-                  <T weight="semibold">Ask AI Support</T>
+                  <T weight="semibold">Ask Warrantyly</T>
                   <T size={12} color={colors.textMuted}>
                     Troubleshoot before you claim
                   </T>

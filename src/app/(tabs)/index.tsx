@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Bell, CircleAlert, Clock3, Package, Search, ShieldCheck, Sparkles } from '@/components/icons';
+import { AssistantMark } from '@/components/brand-mark';
+import { Bell, CircleAlert, Clock3, Package, Search, ShieldCheck } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { HeroProductCard, ProductRow, StatTile } from '@/components/product';
 import { Card, Chip, IconButton, Screen, SectionTitle, T, textStyles } from '@/components/ui';
@@ -93,17 +94,15 @@ export default function Home() {
         </>
       ) : null}
 
-      <Pressable onPress={() => router.push('/assistant')}>
+      <Pressable onPress={() => router.push('/assistant')} accessibilityRole="button" accessibilityLabel="Ask Warrantyly for quick fixes">
         <Card flat style={styles.aiCard}>
-          <View style={styles.aiIcon}>
-            <Sparkles size={20} color={colors.violet} strokeWidth={2.2} />
-          </View>
+          <AssistantMark size={42} />
           <View style={{ flex: 1 }}>
             <T weight="semibold" size={15}>
               Something not working?
             </T>
             <T size={13} color={colors.textMuted}>
-              Ask the AI assistant for quick fixes
+              Ask Warrantyly for quick fixes
             </T>
           </View>
         </Card>
@@ -149,7 +148,6 @@ const styles = StyleSheet.create({
   },
   grid: { gap: space.sm, marginTop: space.lg },
   gridRow: { flexDirection: 'row', gap: space.sm },
-  aiCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: space.md, backgroundColor: colors.violetSoft },
-  aiIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  aiCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: space.md, backgroundColor: colors.primarySoft },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: space.md },
 });

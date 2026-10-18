@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Field, SelectField } from '@/components/fields';
-import { ArrowRight, Calendar, ImagePlus, Sparkles } from '@/components/icons';
+import { ArrowRight, Calendar, ImagePlus, ScanText } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { categoryIcon } from '@/components/product';
 import { Badge, Button, Card, Header, resetTo, Screen, T } from '@/components/ui';
@@ -84,7 +84,7 @@ export default function Confirm() {
       <PageTitle title={fromAI ? 'Confirm product' : 'Add product'} />
       <Header
         title={fromAI ? 'Confirm Product Details' : 'Add Product'}
-        subtitle={fromAI ? 'Review and edit the information detected by AI' : 'Enter the details from your receipt'}
+        subtitle={fromAI ? 'Check the details we filled in from your receipt' : 'Enter the details from your receipt'}
       />
 
       <View style={styles.photo}>
@@ -95,7 +95,7 @@ export default function Confirm() {
         )}
         {fromAI ? (
           <View style={styles.aiBadge}>
-            <Badge label="Detected by AI" icon={Sparkles} fg={colors.violet} bg={colors.violetSoft} />
+            <Badge label="Filled in from your receipt" icon={ScanText} fg={colors.primaryDark} bg={colors.primarySoft} />
           </View>
         ) : null}
         <Pressable style={styles.change} onPress={changePhoto}>

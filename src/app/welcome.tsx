@@ -1,115 +1,153 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { BrandMark } from '@/components/brand-mark';
-import { ArrowRight, BellRing, Headphones, Laptop, Refrigerator, ScanLine, Smartphone, Wrench, type LucideIcon } from '@/components/icons';
+import { Smartphone } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { Button, T } from '@/components/ui';
 import { useStore } from '@/data/store';
-import { colors, gradients, radius, space } from '@/theme';
+import { colors, space } from '@/theme';
 
-const features: { icon: LucideIcon; label: string; tint: string }[] = [
-  { icon: ScanLine, label: 'Scan receipts with AI', tint: '#60A5FA' },
-  { icon: BellRing, label: 'Get reminded before it expires', tint: '#A78BFA' },
-  { icon: Wrench, label: 'Repair help & claim support', tint: '#FBBF24' },
-];
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-/** Orbit of product tiles around the logo — replaces the 3D render with crisp vector icons. */
-const orbit: { icon: LucideIcon; top: number; left: number; rotate: string }[] = [
-  { icon: Laptop, top: 8, left: 190, rotate: '10deg' },
-  { icon: Refrigerator, top: 30, left: 30, rotate: '-8deg' },
-  { icon: Headphones, top: 150, left: 0, rotate: '6deg' },
-  { icon: Smartphone, top: 160, left: 214, rotate: '-10deg' },
-];
+/** Example shown on the welcome ring: a phone bought in March with a 2-year warranty. */
+const DAYS_LEFT = 684;
+const COVER_LEFT = 0.75;
+
+const NIGHT = '#0B1020';
+const MUTED = '#9AA6C2';
+
+/** The app's coverage ring, large: it fills once when the screen opens (skipped with reduce motion). */
+function WelcomeRing({ size }: { size: number }) {
+  const stroke = Math.round(size * 0.06);
+  const r = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * r;
+  const [progress] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .catch(() => false)
+      .then((reduce) => {
+        if (cancelled) return;
+        if (reduce) progress.setValue(COVER_LEFT);
+        else Animated.timing(progress, { toValue: COVER_LEFT, duration: 1100, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [progress]);
+
+  const dashOffset = progress.interpolate({ inputRange: [0, 1], outputRange: [circumference, 0] });
+
+  return (
+    <View style={{ width: size, height: size }} accessible accessibilityLabel={`Example: ${DAYS_LEFT} days of warranty cover left`}>
+      <Svg width={size} height={size}>
+        <Defs>
+          <LinearGradient id="welcome-arc" x1="0.1" y1="0" x2="0.9" y2="1">
+            <Stop offset="0" stopColor="#60A5FA" />
+            <Stop offset="0.6" stopColor="#38BDF8" />
+            <Stop offset="1" stopColor="#34D399" />
+          </LinearGradient>
+        </Defs>
+        <Circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1A2340" strokeWidth={stroke} />
+        <AnimatedCircle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="url(#welcome-arc)"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={dashOffset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </Svg>
+      <View style={styles.ringCenter}>
+        <T weight="extrabold" size={Math.round(size * 0.27)} color={colors.white} style={{ lineHeight: Math.round(size * 0.3), letterSpacing: -2 }}>
+          {DAYS_LEFT}
+        </T>
+        <T weight="medium" size={14} color={MUTED}>
+          days of cover left
+        </T>
+      </View>
+    </View>
+  );
+}
 
 export default function Welcome() {
   const { settings } = useStore();
+  const { height } = useWindowDimensions();
   if (settings.onboarded) return <Redirect href="/" />;
 
   const start = () => router.push('/login');
+  const ringSize = Math.max(180, Math.min(236, Math.round(height * 0.29)));
 
   return (
-    <LinearGradient colors={gradients.night} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }}>
+    <View style={styles.root}>
       <PageTitle title="Welcome" />
       <StatusBar style="light" />
       <SafeAreaView style={styles.safe}>
-        <View style={styles.art}>
-          <View style={styles.glow} />
-          {orbit.map(({ icon: Icon, top, left, rotate }, i) => (
-            <View key={i} style={[styles.tile, { top, left, transform: [{ rotate }] }]}>
-              <Icon size={30} color="#DCE6FF" strokeWidth={1.6} />
-            </View>
-          ))}
-          <View style={styles.mark}>
-            <BrandMark size={112} />
+        <View style={styles.brand}>
+          <BrandMark size={28} />
+          <T weight="bold" size={16} color={colors.white}>
+            Warrantyly
+          </T>
+        </View>
+
+        <View style={styles.hero}>
+          <WelcomeRing size={ringSize} />
+          <View style={styles.chip}>
+            <Smartphone size={17} color="#C9D2E8" strokeWidth={1.8} />
+            <T size={13} color="#C9D2E8">
+              <T weight="semibold" size={13} color={colors.white}>
+                Galaxy S24
+              </T>
+              , bought in March
+            </T>
           </View>
         </View>
 
-        <View style={{ alignItems: 'center' }}>
-          <T weight="extrabold" size={36} color={colors.white} style={{ lineHeight: 42, letterSpacing: -0.5 }}>
-            Warrantyly
+        <View>
+          <T weight="extrabold" size={31} color={colors.white} style={{ lineHeight: 34, letterSpacing: -0.8 }}>
+            Know exactly how long you’re covered.
           </T>
-          <T size={16} color="#B8C3E0" style={{ textAlign: 'center', marginTop: 6 }}>
-            All your product warranties{'\n'}in one place
+          <T size={15} color={MUTED} style={{ marginTop: space.md, lineHeight: 22 }}>
+            Add a product once. Warrantyly counts down its warranty and warns you before it ends.
           </T>
-        </View>
-
-        <View style={styles.features}>
-          {features.map(({ icon: Icon, label, tint }) => (
-            <View key={label} style={styles.feature}>
-              <View style={[styles.featureIcon, { backgroundColor: tint + '26' }]}>
-                <Icon size={18} color={tint} strokeWidth={2.2} />
-              </View>
-              <T weight="medium" size={15} color="#E6ECFA">
-                {label}
-              </T>
-            </View>
-          ))}
-        </View>
-
-        <View style={{ gap: space.md }}>
-          <Button label="Get Started" iconRight={ArrowRight} onPress={start} />
-          <Pressable onPress={start} style={{ alignItems: 'center', padding: 8 }}>
-            <T weight="medium" size={14} color="#B8C3E0">
+          <Button label="Get started" onPress={start} style={{ marginTop: space.xl }} />
+          <Pressable onPress={start} accessibilityRole="button" style={styles.secondary}>
+            <T weight="medium" size={14} color={MUTED}>
               I already have an account
             </T>
           </Pressable>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, paddingHorizontal: space.xl, paddingBottom: space.lg, justifyContent: 'space-between' },
-  art: { width: 280, height: 250, alignSelf: 'center', marginTop: space.xl, alignItems: 'center', justifyContent: 'center' },
-  glow: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(59,130,246,0.22)' },
-  tile: {
-    position: 'absolute',
-    width: 66,
-    height: 66,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
+  root: { flex: 1, backgroundColor: NIGHT },
+  safe: { flex: 1, paddingHorizontal: space.xl, paddingBottom: space.md },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.sm },
+  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, paddingVertical: space.lg },
+  ringCenter: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
+  chip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mark: {
-    borderRadius: 26,
-    boxShadow: '0 10px 30px rgba(59, 130, 246, 0.55)',
-  },
-  features: {
-    gap: 14,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: radius.xl,
-    padding: space.lg,
+    gap: 10,
+    backgroundColor: '#151C33',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#222B47',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  feature: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  featureIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  secondary: { alignItems: 'center', paddingVertical: 12 },
 });
