@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 
@@ -8,18 +8,26 @@ import { PageTitle } from '@/components/page-title';
 import { Card, Header, Screen, T } from '@/components/ui';
 import { mockExtraction } from '@/data/demo';
 import { useStore } from '@/data/store';
+import { partialNotice, readReceipt, type ReadResult } from '@/lib/receipt-ai';
 import { colors, radius, space } from '@/theme';
 
-const STEPS = ['Reading receipt text', 'Detecting product details', 'Finding purchase date', 'Calculating warranty period', 'Searching product information'];
+const STEPS = ['Reading receipt text', 'Finding the product', 'Finding the purchase date', 'Checking the store and price', 'Preparing your details'];
 const STEP_MS = 650;
+/** Even a fast result waits this long, so the steps are readable instead of flashing by. */
+const MIN_MS = 2200;
 
 export default function Analyzing() {
   const { draft, setDraft } = useStore();
+  const { sample } = useLocalSearchParams<{ sample?: string }>();
   const [done, setDone] = useState(0);
   const [progress] = useState(() => new Animated.Value(0));
   const [pulse] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const later = (fn: () => void, ms: number) => timers.push(setTimeout(fn, ms));
+
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
@@ -27,18 +35,38 @@ export default function Analyzing() {
       ]),
     ).start();
 
-    Animated.timing(progress, { toValue: 1, duration: STEP_MS * STEPS.length, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    // The bar stops just short of full and the last step waits, so a slow connection never looks finished too early.
+    Animated.timing(progress, { toValue: 0.92, duration: STEP_MS * STEPS.length, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    STEPS.slice(0, -1).forEach((_, i) => later(() => setDone(i + 1), STEP_MS * (i + 1)));
 
-    const timers = STEPS.map((_, i) => setTimeout(() => setDone(i + 1), STEP_MS * (i + 1)));
-    // Simulated AI extraction. Replace with a call to your backend (e.g. a Supabase Edge Function).
-    const finish = setTimeout(() => {
-      setDraft({ ...mockExtraction, ...draft, reminderDays: draft?.reminderDays ?? 14 });
-      router.replace('/confirm');
-    }, STEP_MS * STEPS.length + 400);
+    const receipt = draft?.receiptUri;
+    // A sample receipt fills in demo details; a real photo is read by the server; no photo means nothing to read.
+    const reading: Promise<ReadResult> =
+      sample === '1'
+        ? Promise.resolve({ ok: true, fields: mockExtraction, complete: true })
+        : receipt
+          ? readReceipt(receipt)
+          : Promise.resolve({ ok: false, message: 'No receipt photo was added. Enter the details below.' });
+    const minimum = new Promise<void>((resolve) => later(resolve, sample === '1' ? STEP_MS * STEPS.length : MIN_MS));
+
+    Promise.all([reading, minimum]).then(([res]) => {
+      if (cancelled) return;
+      setDone(STEPS.length);
+      Animated.timing(progress, { toValue: 1, duration: 250, useNativeDriver: false }).start();
+      later(() => {
+        const base = { receiptUri: draft?.receiptUri, photoUri: draft?.photoUri, reminderDays: draft?.reminderDays ?? 14 };
+        setDraft(
+          res.ok
+            ? { ...base, ...res.fields, ...(res.complete ? {} : { notice: partialNotice }) }
+            : { ...base, notice: res.message },
+        );
+        router.replace('/confirm');
+      }, 450);
+    });
 
     return () => {
+      cancelled = true;
       timers.forEach(clearTimeout);
-      clearTimeout(finish);
     };
     // Runs once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -51,6 +51,18 @@ export default function Scan() {
     if (!res.canceled) proceed(res.assets[0].uri);
   };
 
+  // A QR code carries no product details we can read yet, so be upfront instead of inventing some.
+  const qrFound = () => {
+    setBusy(true);
+    setDraft({ notice: 'We found a QR code, but we can’t read product details from it yet. Enter them below.' });
+    router.replace('/confirm');
+  };
+
+  const trySample = () => {
+    setDraft({});
+    router.replace({ pathname: '/analyzing', params: { sample: '1' } });
+  };
+
   const manual = () => {
     setDraft({});
     router.replace('/confirm');
@@ -69,7 +81,7 @@ export default function Scan() {
           facing="back"
           enableTorch={torch}
           barcodeScannerSettings={mode === 'qr' && qrReady ? { barcodeTypes: ['qr'] } : undefined}
-          onBarcodeScanned={mode === 'qr' && qrReady && !busy ? () => { setBusy(true); proceed(); } : undefined}
+          onBarcodeScanned={mode === 'qr' && qrReady && !busy ? qrFound : undefined}
         />
       ) : null}
       <View style={[StyleSheet.absoluteFill, styles.dim]} />
@@ -149,6 +161,12 @@ export default function Scan() {
             </T>
           </Pressable>
         </View>
+
+        <Pressable onPress={trySample} accessibilityRole="button" style={styles.sample}>
+          <T weight="medium" size={14} color="#C9D2E8">
+            No receipt handy? Try a sample
+          </T>
+        </Pressable>
       </SafeAreaView>
     </View>
   );
@@ -175,5 +193,6 @@ const styles = StyleSheet.create({
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: space.xl, paddingHorizontal: space.lg },
   sideBtn: { width: 60, height: 60, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', gap: 2 },
   shutter: { width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: colors.white, alignItems: 'center', justifyContent: 'center' },
+  sample: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 16, marginTop: space.sm },
   shutterInner: { width: 62, height: 62, borderRadius: 31, backgroundColor: colors.white },
 });

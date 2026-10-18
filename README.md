@@ -23,7 +23,7 @@ src/
     welcome.tsx        Welcome / onboarding (/welcome); Home is `/`
     (tabs)/            Home · Products · [Scan] · Support · Profile
     scan.tsx           Camera: receipt photo, QR code, gallery, manual entry
-    analyzing.tsx      AI extraction progress (simulated)
+    analyzing.tsx      Receipt reading progress (calls the extract-receipt function)
     confirm.tsx        Review & edit extracted details, then save
     product/[id].tsx   Product detail (Overview / Guides / Support / Files)
     claim/[id].tsx     "Something broke?" → claim summary to share
@@ -37,8 +37,24 @@ src/
 
 ## What's simulated (next phase)
 
-- **AI receipt extraction** — `src/app/analyzing.tsx` returns `mockExtraction`. Replace with a backend call (e.g. a Supabase Edge Function calling a vision model).
 - **AI assistant** — `src/app/assistant.tsx` uses canned answers from `src/data/guides.ts`.
+
+## Receipt reading
+
+A photo of a receipt is shrunk on the phone (`src/lib/receipt-ai.ts`), sent to the Supabase Edge Function `supabase/functions/extract-receipt`, and read by a Claude vision model with a strict JSON schema. The app checks every returned field (dates, price, category, warranty length) before it reaches the form, and any failure falls back to manual entry with the photo kept. **Try a sample** on the scan screen fills in demo details without any server.
+
+Setup (once, needs the [Supabase CLI](https://supabase.com/docs/guides/cli)):
+
+```bash
+supabase link --project-ref <your-project-ref>
+supabase secrets set ANTHROPIC_API_KEY=<your key>
+supabase functions deploy extract-receipt --no-verify-jwt
+```
+
+- The key lives only in Supabase secrets, never in the app or git.
+- Set a monthly **spend limit** on the key in the Anthropic console. The function also limits each address to 20 receipts an hour, but that resets when it restarts, so the spend limit is the real guard.
+- The model defaults to `claude-opus-5-5`. Run `supabase secrets set RECEIPT_MODEL=claude-haiku-5-5` to read receipts for a fraction of the cost.
+- QR codes are not decoded into product details yet.
 
 ## Reminders
 

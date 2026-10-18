@@ -6,6 +6,9 @@ import { supabase } from '@/lib/supabase';
 // Web only: when the Google popup lands back on this app, this closes it and hands the result to the opener.
 WebBrowser.maybeCompleteAuthSession();
 
+/** Off until the owner has set up the Google provider in Supabase and sets EXPO_PUBLIC_GOOGLE_SIGNIN=true in .env. */
+export const googleEnabled = process.env.EXPO_PUBLIC_GOOGLE_SIGNIN === 'true';
+
 export type GoogleResult = { ok: true; userId: string; email: string } | { ok: false; cancelled?: boolean; message: string };
 
 /** Reads the params Supabase puts after `?` or `#` on the redirect back into the app. */

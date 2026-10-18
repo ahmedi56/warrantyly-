@@ -5,18 +5,18 @@ import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Field, SelectField } from '@/components/fields';
-import { ArrowRight, Calendar, ImagePlus, ScanText } from '@/components/icons';
+import { ArrowRight, Calendar, CircleAlert, ImagePlus, ScanText } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { categoryIcon } from '@/components/product';
 import { Badge, Button, Card, Header, resetTo, Screen, T } from '@/components/ui';
 import { useStore } from '@/data/store';
 import { savePhoto } from '@/lib/photos';
 import { CATEGORIES, type Category } from '@/data/types';
-import { isValidISO, parsePrice } from '@/data/validation';
+import { isValidISO, parsePrice, WARRANTY_MONTH_CHOICES } from '@/data/validation';
 import { expiryDate, formatDate, toISO } from '@/data/warranty';
 import { colors, radius, space } from '@/theme';
 
-const WARRANTY_OPTIONS = [6, 12, 18, 24, 36, 48, 60].map((m) => ({
+const WARRANTY_OPTIONS = WARRANTY_MONTH_CHOICES.map((m) => ({
   label: m % 12 === 0 ? `${m / 12} Year${m === 12 ? '' : 's'}` : `${m} Months`,
   value: m,
 }));
@@ -87,6 +87,15 @@ export default function Confirm() {
         subtitle={fromAI ? 'Check the details we filled in from your receipt' : 'Enter the details from your receipt'}
       />
 
+      {draft.notice ? (
+        <Card flat style={styles.notice}>
+          <CircleAlert size={20} color={colors.warning} />
+          <T size={13} color={colors.text} style={{ flex: 1 }}>
+            {draft.notice}
+          </T>
+        </Card>
+      ) : null}
+
       <View style={styles.photo}>
         {photoUri ? (
           <Image source={{ uri: photoUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
@@ -148,6 +157,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
   },
+  notice: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.warningSoft, marginBottom: space.md },
   aiBadge: { position: 'absolute', top: 12, left: 12 },
   change: {
     position: 'absolute',

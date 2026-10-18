@@ -18,3 +18,6 @@ export function parsePrice(input: string): number | undefined {
   const n = Number(s);
   return n < 1e10 ? n : undefined; // database column is numeric(12, 2)
 }
+
+/** Warranty lengths the confirm screen offers, in months. */
+export const WARRANTY_MONTH_CHOICES = [6, 12, 18, 24, 36, 48, 60];

@@ -14,7 +14,10 @@ const STORAGE_KEY = 'warrantyly:v1';
 const RETRY_MS = 60_000;
 
 /** Fields captured during the scan → analyze → confirm flow, before the product is saved. */
-export type Draft = Partial<Omit<Product, 'id' | 'createdAt'>>;
+export type Draft = Partial<Omit<Product, 'id' | 'createdAt'>> & {
+  /** A one-time message for the confirm screen, e.g. when a receipt could not be read. Never saved with the product. */
+  notice?: string;
+};
 
 export type SyncStatus = 'idle' | 'syncing' | 'offline';
 
