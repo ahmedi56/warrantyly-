@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ArrowRight, CloudOff, KeyRound, Mail, ShieldCheck } from '@/components/icons';
+import { GoogleLogo } from '@/components/google-logo';
 import { PageTitle } from '@/components/page-title';
 import { Button, Card, Header, IconTile, resetTo, Screen, T, textStyles } from '@/components/ui';
 import { useStore } from '@/data/store';
+import { signInWithGoogle } from '@/lib/google-auth';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { requestPermission, syncReminders } from '@/notifications';
 import { colors, font, radius, space } from '@/theme';
@@ -77,6 +79,16 @@ export default function Login() {
     setEmail(address);
     setStep('code');
     setCooldown(RESEND_SECONDS);
+  };
+
+  const google = async () => {
+    setBusy(true);
+    setError('');
+    const res = await signInWithGoogle();
+    setBusy(false);
+    if (!res.ok) return res.cancelled ? undefined : setError(friendly(res.message));
+    signIn(res.userId, res.email);
+    enterApp();
   };
 
   const verify = async () => {
@@ -155,6 +167,24 @@ export default function Login() {
                 style={[textStyles.input, { flex: 1, paddingVertical: 14 }]}
               />
             </View>
+            <View style={styles.or}>
+              <View style={styles.orLine} />
+              <T size={13} color={colors.textFaint}>
+                or
+              </T>
+              <View style={styles.orLine} />
+            </View>
+            <Pressable
+              onPress={google}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with Google"
+              style={({ pressed }) => [styles.google, (pressed || busy) && { opacity: 0.6 }]}>
+              <GoogleLogo size={20} />
+              <T weight="semibold" size={15}>
+                Continue with Google
+              </T>
+            </Pressable>
             <Card style={[styles.row, { marginTop: space.xl }]}>
               <IconTile icon={ShieldCheck} fg={colors.success} bg={colors.successSoft} />
               <T size={13} color={colors.textMuted} style={{ flex: 1 }}>
@@ -220,6 +250,9 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     paddingHorizontal: space.lg,
   },
+  or: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: space.lg, marginBottom: space.lg },
+  orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.line },
+  google: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: 52, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line },
   code: { flex: 1, paddingVertical: 14, fontFamily: font.bold, fontSize: 24, letterSpacing: 8 },
   links: { flexDirection: 'row', justifyContent: 'space-between', marginTop: space.lg },
 });
