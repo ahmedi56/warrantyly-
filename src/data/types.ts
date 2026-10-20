@@ -59,5 +59,9 @@ export type Settings = {
   notifications: boolean;
   language: 'English' | 'Français' | 'Español' | 'العربية';
   defaultReminderDays: number;
+  /** Local hour (0-23) reminders arrive at. */
+  reminderHour: number;
+  /** Also remind 7 days and 1 day before expiry. */
+  followUpReminders: boolean;
   onboarded: boolean;
 };

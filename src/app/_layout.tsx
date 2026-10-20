@@ -9,6 +9,7 @@ import { router, Stack, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { PageTitle, SiteMeta } from '@/components/page-title';
@@ -25,11 +26,13 @@ function ReminderSync() {
   // Only reschedule when something that affects reminders actually changed.
   const key = JSON.stringify([
     settings.notifications && settings.onboarded,
+    settings.reminderHour,
+    settings.followUpReminders,
     products.map((p) => [p.id, p.name, p.purchaseDate, p.warrantyMonths, p.reminderDays]),
   ]);
 
   useEffect(() => {
-    syncReminders(products, settings.notifications && settings.onboarded);
+    syncReminders(products, settings.notifications && settings.onboarded, { hour: settings.reminderHour, followUps: settings.followUpReminders });
     // `key` captures every field used above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
@@ -40,7 +43,10 @@ function ReminderSync() {
 /** Opens the product when the user taps a reminder, including when it launched the app. */
 function useNotificationTaps() {
   useEffect(() => {
-    return onReminderTapped((url) => router.push(url as Href));
+    return onReminderTapped(
+      (url) => router.push(url as Href),
+      (message) => Alert.alert('Reminder', message),
+    );
   }, []);
 }
 

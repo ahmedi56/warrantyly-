@@ -1,3 +1,4 @@
+import type { ReminderPrefs } from '@/data/reminders';
 import type { Product } from '@/data/types';
 
 /**
@@ -16,10 +17,10 @@ export async function requestPermission() {
   return false;
 }
 
-export async function syncReminders(_products: Product[], _enabled: boolean) {}
+export async function syncReminders(_products: Product[], _enabled: boolean, _prefs?: ReminderPrefs) {}
 
-export async function sendTestReminder(_product: Product | undefined) {}
+export async function sendTestReminder(_product: Product | undefined, _prefs?: ReminderPrefs) {}
 
-export function onReminderTapped(_open: (url: string) => void) {
+export function onReminderTapped(_open: (url: string) => void, _tell?: (message: string) => void) {
   return () => {};
 }

@@ -3,10 +3,10 @@ import { router } from 'expo-router';
 import { Alert, Linking, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { SelectField } from '@/components/fields';
-import { Bell, BellRing, ChevronRight, Cloud, CloudOff, Download, LogIn, LogOut, Package, RefreshCw, RotateCcw, Ticket, UserX, type LucideIcon } from '@/components/icons';
+import { Bell, BellRing, ChevronRight, Clock3, Cloud, CloudOff, Download, LogIn, LogOut, Package, RefreshCw, RotateCcw, Ticket, UserX, type LucideIcon } from '@/components/icons';
 import { PageTitle } from '@/components/page-title';
 import { Button, Card, Divider, IconTile, Screen, SectionTitle, T } from '@/components/ui';
-import { planReminders, REMINDER_OPTIONS } from '@/data/reminders';
+import { planReminders, REMINDER_HOUR_OPTIONS, REMINDER_OPTIONS } from '@/data/reminders';
 import { useStore } from '@/data/store';
 import type { Settings } from '@/data/types';
 import { formatDate, statusOf } from '@/data/warranty';
@@ -58,7 +58,8 @@ export default function Profile() {
   const expiring = products.filter((p) => statusOf(p) === 'expiring').length;
   const initials = settings.userName.slice(0, 2).toUpperCase();
 
-  const nextReminder = planReminders(products)[0];
+  const reminderPrefs = { hour: settings.reminderHour, followUps: settings.followUpReminders };
+  const nextReminder = planReminders(products, new Date(), reminderPrefs)[0];
   const nextProduct = products.find((p) => p.id === nextReminder?.productId);
 
   const toggleNotifications = async (on: boolean) => {
@@ -75,7 +76,7 @@ export default function Profile() {
 
   const testReminder = async () => {
     if (!(await requestPermission())) return toggleNotifications(true);
-    await sendTestReminder(nextProduct ?? products[0]);
+    await sendTestReminder(nextProduct ?? products[0], reminderPrefs);
     Alert.alert('Test reminder on its way', 'It will arrive in about 5 seconds. Lock your phone or leave the app to see it.');
   };
 
@@ -206,6 +207,22 @@ export default function Profile() {
         {notificationsSupported && settings.notifications ? (
           <>
             <Divider />
+            <Row
+              icon={Clock3}
+              label="Extra reminders"
+              right={
+                <Switch
+                  value={settings.followUpReminders}
+                  onValueChange={(followUpReminders) => updateSettings({ followUpReminders })}
+                  trackColor={{ true: colors.primary, false: colors.line }}
+                  thumbColor={colors.white}
+                />
+              }
+            />
+            <T size={13} color={colors.textMuted} style={{ marginLeft: 48, marginTop: -4, marginBottom: space.xs }}>
+              Also remind me 7 days and 1 day before a warranty ends.
+            </T>
+            <Divider />
             <Row icon={BellRing} label="Send test reminder" onPress={testReminder} />
           </>
         ) : null}
@@ -216,6 +233,14 @@ export default function Profile() {
             onChange={(language) => updateSettings({ language })}
             options={(['English', 'Français', 'Español', 'العربية'] as const).map((l) => ({ label: l, value: l }))}
           />
+          {notificationsSupported && settings.notifications ? (
+            <SelectField<number>
+              label="Reminder time"
+              value={settings.reminderHour}
+              onChange={(reminderHour) => updateSettings({ reminderHour })}
+              options={REMINDER_HOUR_OPTIONS}
+            />
+          ) : null}
           <SelectField<number>
             label="Default reminder"
             value={settings.defaultReminderDays}

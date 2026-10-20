@@ -27,7 +27,7 @@ import { PageTitle } from '@/components/page-title';
 import { CoverageRing, categoryIcon } from '@/components/product';
 import { Badge, Button, Card, Divider, goBack, IconButton, IconTile, T } from '@/components/ui';
 import { guides } from '@/data/guides';
-import { nextReminderFor, REMINDER_OPTIONS } from '@/data/reminders';
+import { formatHour, nextReminderFor, REMINDER_OPTIONS } from '@/data/reminders';
 import { useProduct, useStore } from '@/data/store';
 import { daysLeft, expiryDate, formatDate, formatPrice, formatWarranty, humanizeDays, statusOf, statusStyle } from '@/data/warranty';
 import { colors, radius, space } from '@/theme';
@@ -64,11 +64,12 @@ export default function ProductDetail() {
   const st = statusOf(product);
   const d = daysLeft(product);
   const Icon = categoryIcon[product.category];
-  const next = nextReminderFor(product);
+  const prefs = { hour: settings.reminderHour, followUps: settings.followUpReminders };
+  const next = nextReminderFor(product, new Date(), prefs);
   const reminderNote = !settings.notifications
     ? 'Reminders are turned off in Profile.'
     : next
-      ? `Next reminder: ${formatDate(next.date)} at 9:00`
+      ? `Next reminder: ${formatDate(next.date)} at ${formatHour(prefs.hour)}`
       : 'No upcoming reminders. This warranty has ended.';
 
   const remove = () => {

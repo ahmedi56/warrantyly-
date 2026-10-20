@@ -41,6 +41,8 @@ const defaultSettings: Settings = {
   notifications: true,
   language: 'English',
   defaultReminderDays: 14,
+  reminderHour: 9,
+  followUpReminders: true,
   onboarded: false,
 };
 
@@ -103,7 +105,8 @@ function migrateIds(products: Product[], claims: Claim[]) {
 export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'hydrate': {
-      const next = { ...state, ...action.state, ready: true, syncStatus: 'idle' as const };
+      // Merge settings so a copy saved by an older version still gets defaults for newer options.
+      const next = { ...state, ...action.state, settings: { ...state.settings, ...action.state.settings }, ready: true, syncStatus: 'idle' as const };
       return { ...next, ...migrateIds(next.products, next.claims) };
     }
     case 'addProduct':
@@ -165,7 +168,13 @@ export function reducer(state: State, action: Action): State {
     }
     case 'signedOut':
       // Clear the previous user's data from this device.
-      return { ...initial, ready: true, settings: { ...defaultSettings, notifications: state.settings.notifications } };
+      return { ...initial, ready: true, settings: {
+          ...defaultSettings,
+          notifications: state.settings.notifications,
+          reminderHour: state.settings.reminderHour,
+          followUpReminders: state.settings.followUpReminders,
+        },
+      };
     case 'opDone': {
       const i = state.outbox.findIndex((o) => sameOp(o, action.op));
       const outbox = i === -1 ? state.outbox : [...state.outbox.slice(0, i), ...state.outbox.slice(i + 1)];
