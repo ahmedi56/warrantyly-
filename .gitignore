@@ -49,3 +49,6 @@ public/zxing/
 .env
 .env.*
 !.env.example
+
+# Supabase CLI local cache
+supabase/.temp/

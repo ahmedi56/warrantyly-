@@ -41,19 +41,21 @@ src/
 
 ## Receipt reading
 
-A photo of a receipt is shrunk on the phone (`src/lib/receipt-ai.ts`), sent to the Supabase Edge Function `supabase/functions/extract-receipt`, and read by a Claude vision model with a strict JSON schema. The app checks every returned field (dates, price, category, warranty length) before it reaches the form, and any failure falls back to manual entry with the photo kept. **Try a sample** on the scan screen fills in demo details without any server.
+A photo of a receipt is shrunk on the phone (`src/lib/receipt-ai.ts`), sent to the Supabase Edge Function `supabase/functions/extract-receipt`, and read by Google's Gemini vision model with a strict JSON schema. The app checks every returned field (dates, price, category, warranty length) before it reaches the form, and any failure falls back to manual entry with the photo kept. **Try a sample** on the scan screen fills in demo details without any server.
 
-Setup (once, needs the [Supabase CLI](https://supabase.com/docs/guides/cli)):
+Setup (once, needs a free key from [Google AI Studio](https://aistudio.google.com/apikey)):
 
 ```bash
-supabase link --project-ref <your-project-ref>
-supabase secrets set ANTHROPIC_API_KEY=<your key>
-supabase functions deploy extract-receipt --no-verify-jwt
+npx supabase@latest login
+npx supabase@latest link --project-ref <your-project-ref>
+npx supabase@latest secrets set GEMINI_API_KEY=<your key>
+npx supabase@latest functions deploy extract-receipt --no-verify-jwt --use-api
 ```
 
 - The key lives only in Supabase secrets, never in the app or git.
-- Set a monthly **spend limit** on the key in the Anthropic console. The function also limits each address to 20 receipts an hour, but that resets when it restarts, so the spend limit is the real guard.
-- The model defaults to `claude-opus-5-5`. Run `supabase secrets set RECEIPT_MODEL=claude-haiku-5-5` to read receipts for a fraction of the cost.
+- The free tier has request limits (see AI Studio for the current numbers). When they are hit the app shows a "try again later" message. Google may use free-tier requests to improve its products, so enable billing on the key before real users send receipts.
+- The model defaults to `gemini-3.8-flash`. Run `supabase secrets set GEMINI_MODEL=<model id>` to change it.
+- The function also limits each address to 20 receipts an hour, but that resets when it restarts.
 - QR codes are not decoded into product details yet.
 
 ## Reminders

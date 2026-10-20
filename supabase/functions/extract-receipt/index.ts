@@ -1,22 +1,22 @@
 // Reads a photo of a purchase receipt and returns the product details as JSON.
+// Uses Google's Gemini API (it has a free tier, get a key at https://aistudio.google.com/apikey).
 //
 // Deploy (see README, "Receipt reading"):
-//   supabase secrets set ANTHROPIC_API_KEY=...        (the key stays on the server, never in the app)
-//   supabase functions deploy extract-receipt --no-verify-jwt
+//   supabase secrets set GEMINI_API_KEY=...           (the key stays on the server, never in the app)
+//   supabase functions deploy extract-receipt --no-verify-jwt --use-api
 //
 // Runs on Deno inside Supabase Edge Functions.
-import Anthropic from 'npm:@anthropic-ai/sdk@0.135.0';
 
-// Receipt reading is a small, bounded task, so a cheaper vision model also works well here.
-// Set RECEIPT_MODEL (e.g. to claude-haiku-5-5) to cut the cost per receipt.
-const MODEL = Deno.env.get('RECEIPT_MODEL') ?? 'claude-opus-5-5';
+// Set GEMINI_MODEL to switch models without redeploying code.
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash';
+const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 /** The client shrinks photos to about 2000 px before sending, which is well under this. */
 const MAX_IMAGE_CHARS = 4_000_000;
 const MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 // Soft per-address limit. It resets when the function restarts, so it only slows down casual abuse.
-// The real spending guard is a monthly spend limit on the Anthropic key.
+// The free Gemini tier also has its own request limits, so a busy day shows up as "busy" in the app.
 const LIMIT = 20;
 const WINDOW_MS = 60 * 60 * 1000;
 const hits = new Map<string, number[]>();
@@ -53,7 +53,9 @@ Rules:
 - currency is an ISO 4217 code (USD, EUR, TND...), only if the receipt shows it or the country is explicit.
 - warranty_months only if the receipt states a warranty or guarantee period. Convert years to months.
 - product_name is the product as a person would name it, like "BrewMaster Pro coffee machine", not a stock code.
-- If the image is not a purchase receipt or invoice, set is_receipt to false and every other field to null.`;
+- category must be one of: ${CATEGORIES.join(', ')}.
+- If the image is not a purchase receipt or invoice, set is_receipt to false and every other field to null.
+Answer with a single JSON object only.`;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -74,11 +76,30 @@ function limited(ip: string) {
   return recent.length > LIMIT;
 }
 
+type GeminiResponse = {
+  candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+  promptFeedback?: { blockReason?: string };
+};
+
+async function callGemini(apiKey: string, image: string, mediaType: string, withSchema: boolean) {
+  const generationConfig: Record<string, unknown> = { responseMimeType: 'application/json', temperature: 0 };
+  if (withSchema) generationConfig.responseJsonSchema = SCHEMA;
+  return await fetch(`${ENDPOINT}/${MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: 'Extract the details from this receipt.' }, { inlineData: { mimeType: mediaType, data: image } }] }],
+      generationConfig,
+    }),
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return reply({ ok: false, code: 'method', message: 'Use POST.' }, 405);
 
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+  const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) return fail('not_configured', 'Receipt reading is not set up on the server.');
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
@@ -96,44 +117,26 @@ Deno.serve(async (req) => {
   }
   if (image.length > MAX_IMAGE_CHARS) return fail('too_large', 'That image is too large.');
 
-  const client = new Anthropic({ apiKey });
-  const request = {
-    model: MODEL,
-    max_tokens: 16000,
-    system: SYSTEM,
-    // Low effort is enough to read printed text and keeps each receipt fast and cheap.
-    output_config: { effort: 'low' as const, format: { type: 'json_schema' as const, schema: SCHEMA } },
-    messages: [
-      {
-        role: 'user' as const,
-        content: [
-          { type: 'image' as const, source: { type: 'base64' as const, media_type: mediaType as 'image/jpeg', data: image } },
-          { type: 'text' as const, text: 'Extract the details from this receipt.' },
-        ],
-      },
-    ],
-  };
-
   try {
-    let response;
-    try {
-      // If the safety checks decline a request, Anthropic retries it on a recommended fallback model.
-      response = await client.beta.messages.create({ ...request, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' });
-    } catch (e) {
-      // A 400 is never billed. If the fallback option is rejected, read the receipt without it.
-      if (!(e instanceof Anthropic.BadRequestError)) throw e;
-      response = await client.messages.create(request);
+    let res = await callGemini(apiKey, image, mediaType, true);
+    // A 400 may mean the schema option was not accepted. Retry once with the instructions alone.
+    if (res.status === 400) res = await callGemini(apiKey, image, mediaType, false);
+    if (res.status === 429) return fail('busy', 'The reader is busy. Try again in a moment.');
+    if (!res.ok) {
+      console.error('[extract-receipt] gemini', res.status, (await res.text()).slice(0, 300));
+      return fail('unavailable', 'Receipt reading is unavailable right now.');
     }
 
-    if (response.stop_reason === 'refusal') return fail('declined', 'That image could not be read.');
-    const text = response.content.find((b) => b.type === 'text');
-    if (!text || text.type !== 'text') return fail('unreadable', 'Nothing could be read from that image.');
+    const body = (await res.json()) as GeminiResponse;
+    if (body.promptFeedback?.blockReason) return fail('declined', 'That image could not be read.');
+    const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim();
+    if (!text) return fail('unreadable', 'Nothing could be read from that image.');
 
-    const data = JSON.parse(text.text);
-    return reply({ ok: true, data });
+    // Some models wrap JSON in a code fence even when asked not to.
+    const json = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    return reply({ ok: true, data: JSON.parse(json) });
   } catch (e) {
     console.error('[extract-receipt]', e instanceof Error ? e.message : e);
-    if (e instanceof Anthropic.RateLimitError) return fail('busy', 'The reader is busy. Try again in a moment.');
     return fail('unavailable', 'Receipt reading is unavailable right now.');
   }
 });
