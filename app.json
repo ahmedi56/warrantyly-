@@ -22,8 +22,11 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.warrantyly.app",
       "versionCode": 3,
+      "allowBackup": false,
       "permissions": [
-        "android.permission.CAMERA",
+        "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ]
     },

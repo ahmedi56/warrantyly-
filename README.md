@@ -55,7 +55,7 @@ npx supabase@latest functions deploy extract-receipt --no-verify-jwt --use-api
 - The key lives only in Supabase secrets, never in the app or git.
 - The free tier has request limits (see AI Studio for the current numbers). When they are hit the app shows a "try again later" message. Google may use free-tier requests to improve its products, so enable billing on the key before real users send receipts.
 - The model defaults to `gemini-3.8-flash`. Run `supabase secrets set GEMINI_MODEL=<model id>` to change it.
-- The function also limits each address to 20 receipts an hour, but that resets when it restarts.
+- **Daily limits** protect the Gemini quota (and your wallet on a paid plan). Run `supabase/migrations/0003_receipt_read_limits.sql` in the Supabase SQL Editor before deploying. Signed-in people get 30 reads a day, guests 5 (counted per address), and everyone together 300. Change them with `USER_DAILY_LIMIT`, `GUEST_DAILY_LIMIT` and `GLOBAL_DAILY_LIMIT` secrets. The counts live in the database, so restarts don't reset them.
 - QR codes are not decoded into product details yet.
 
 ## Reminders

@@ -7,4 +7,6 @@
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8=' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tpqxdlafxoxdxmfetykt.supabase.co; font-src 'self' data:; connect-src 'self' blob: data: https://tpqxdlafxoxdxmfetykt.supabase.co; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=(), usb=()
   Referrer-Policy: strict-origin-when-cross-origin

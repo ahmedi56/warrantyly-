@@ -15,7 +15,10 @@ const TIMEOUT_MS = 45_000;
 const MESSAGES = {
   offline: 'Receipt reading isn’t available right now. Enter the details below, or go back and try a sample receipt.',
   notReceipt: 'That doesn’t look like a receipt. Try another photo, or enter the details yourself.',
-  rateLimited: 'Too many receipts were read in a short time. Please try again in a little while.',
+  rateLimited: 'Receipt reading is busy right now. Please try again in a little while, or enter the details yourself.',
+  guestLimit: 'You’ve used today’s free receipt reads. Sign in for more, or enter the details yourself.',
+  userLimit: 'You’ve reached today’s limit for reading receipts. Try again tomorrow, or enter the details yourself.',
+  dailyFull: 'Receipt reading has reached its daily limit. Try again tomorrow, or enter the details yourself.',
   failed: 'We couldn’t read that receipt. Check your connection, or enter the details yourself.',
   partial: 'We found some details but not the product name. Please fill in the rest.',
 };
@@ -86,7 +89,10 @@ export async function readReceipt(uri: string): Promise<ReadResult> {
     if (error) return { ok: false, message: MESSAGES.failed };
 
     if (!data?.ok) {
-      if (data?.code === 'rate_limited' || data?.code === 'busy') return { ok: false, message: MESSAGES.rateLimited };
+      if (data?.code === 'busy') return { ok: false, message: MESSAGES.rateLimited };
+      if (data?.code === 'guest_limit') return { ok: false, message: MESSAGES.guestLimit };
+      if (data?.code === 'user_limit') return { ok: false, message: MESSAGES.userLimit };
+      if (data?.code === 'global_limit') return { ok: false, message: MESSAGES.dailyFull };
       if (data?.code === 'not_configured') return { ok: false, message: MESSAGES.offline };
       return { ok: false, message: MESSAGES.failed };
     }

@@ -15,11 +15,15 @@ const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MAX_IMAGE_CHARS = 4_000_000;
 const MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-// Soft per-address limit. It resets when the function restarts, so it only slows down casual abuse.
-// The free Gemini tier also has its own request limits, so a busy day shows up as "busy" in the app.
-const LIMIT = 20;
-const WINDOW_MS = 60 * 60 * 1000;
-const hits = new Map<string, number[]>();
+// Daily allowances, counted in the database (migration 0003) so they survive restarts and can't be dodged.
+// Signed-in people get more than guests, and everyone together is capped so a flood can't use up the Gemini quota.
+// Override with secrets: USER_DAILY_LIMIT, GUEST_DAILY_LIMIT, GLOBAL_DAILY_LIMIT.
+const num = (name: string, fallback: number) => Number(Deno.env.get(name)) || fallback;
+const USER_DAILY_LIMIT = num('USER_DAILY_LIMIT', 30);
+const GUEST_DAILY_LIMIT = num('GUEST_DAILY_LIMIT', 5);
+const GLOBAL_DAILY_LIMIT = num('GLOBAL_DAILY_LIMIT', 300);
+/** Refuse oversized requests before reading them (the image is at most ~4 MB of base64 text). */
+const MAX_BODY_BYTES = 5_000_000;
 
 const CATEGORIES = ['Home Appliances', 'Electronics', 'Computers', 'Phones', 'Audio', 'Furniture', 'Tools', 'Other'];
 const nullable = (schema: Record<string, unknown>) => ({ anyOf: [schema, { type: 'null' }] });
@@ -68,12 +72,35 @@ const reply = (body: Record<string, unknown>, status = 200) =>
 
 const fail = (code: string, message: string) => reply({ ok: false, code, message });
 
-function limited(ip: string) {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  return recent.length > LIMIT;
+const sha256 = async (text: string) =>
+  [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map((b) => b.toString(16).padStart(2, '0')).join('');
+
+/** Who is asking: the signed-in user if the request carries a valid session, otherwise the caller's address (hashed). */
+async function whoIsAsking(req: Request, supabaseUrl: string, serviceKey: string) {
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (token) {
+    // The app sends its public key as the token for guests. That is not a user session, so Supabase answers 401 and we fall through.
+    const res = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: serviceKey, Authorization: `Bearer ${token}` } }).catch(() => null);
+    if (res?.ok) {
+      const user = await res.json().catch(() => null);
+      if (typeof user?.id === 'string') return { key: `user:${user.id}`, limit: USER_DAILY_LIMIT, guest: false };
+    }
+  }
+  // cf-connecting-ip is set by the proxy in front of the function. The first entry of x-forwarded-for can be forged by the caller, so use its last.
+  const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for')?.split(',').pop()?.trim() ?? 'unknown';
+  return { key: `ip:${(await sha256(ip)).slice(0, 32)}`, limit: GUEST_DAILY_LIMIT, guest: true };
+}
+
+/** Counts this read against the caller and the app-wide total. Returns null when allowed, or the reason it is not. */
+async function takeRead(supabaseUrl: string, serviceKey: string, key: string, limit: number) {
+  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/take_receipt_read`, {
+    method: 'POST',
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_key: key, p_key_limit: limit, p_global_limit: GLOBAL_DAILY_LIMIT }),
+  });
+  if (!res.ok) throw new Error(`limit check failed: ${res.status}`);
+  const answer = await res.json();
+  return answer === 'ok' ? null : (answer as string);
 }
 
 type GeminiResponse = {
@@ -102,8 +129,21 @@ Deno.serve(async (req) => {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) return fail('not_configured', 'Receipt reading is not set up on the server.');
 
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
-  if (limited(ip)) return fail('rate_limited', 'Too many receipts in a short time.');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceKey) return fail('not_configured', 'Receipt reading is not set up on the server.');
+  if (Number(req.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) return fail('too_large', 'That image is too large.');
+
+  // Check the allowance before spending any Gemini quota. If the check itself fails, refuse rather than skip it.
+  try {
+    const who = await whoIsAsking(req, supabaseUrl, serviceKey);
+    const denied = await takeRead(supabaseUrl, serviceKey, who.key, who.limit);
+    if (denied === 'global_limit') return fail('global_limit', 'Receipt reading is at its daily limit.');
+    if (denied) return fail(who.guest ? 'guest_limit' : 'user_limit', 'Daily limit reached.');
+  } catch (e) {
+    console.error('[extract-receipt]', e instanceof Error ? e.message : e);
+    return fail('unavailable', 'Receipt reading is unavailable right now.');
+  }
 
   let image: unknown;
   let mediaType: unknown;
