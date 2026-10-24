@@ -7,6 +7,7 @@
 <meta name="description" content="Photograph a receipt. Warrantyly finds the warranty, counts it down and reminds you before it ends. Free for Android, or use it in your browser.">
 <meta name="theme-color" content="#0B1020">
 <link rel="icon" href="/get/icon.png">
+<script src="/get/device.js"></script>
 <meta property="og:type" content="website">
 <meta property="og:title" content="Warrantyly: know how long you’re covered">
 <meta property="og:description" content="Photograph a receipt. Warrantyly counts the warranty down and reminds you before it ends.">
@@ -81,6 +82,23 @@ h1 {
 .btn.secondary { border-color: var(--line); color: var(--text); }
 .btn.secondary:hover { border-color: var(--muted); }
 .fine { margin: 18px 0 0; max-width: 34em; color: var(--muted); font-size: 0.9375rem; }
+
+/* Device-specific bits. device.js sets data-device on <html>; with no script, only .fallback shows. */
+.only { display: none; }
+[data-device="android"] .only-android,
+[data-device="ios"] .only-ios,
+[data-device="desktop"] .only-desktop { display: block; }
+html[data-device] .fallback { display: none; }
+/* iPhones and computers can't install the APK: lead with the browser version instead. */
+[data-device="ios"] .btn.apk,
+[data-device="desktop"] .btn.apk { display: none; }
+[data-device="ios"] .btn.web,
+[data-device="desktop"] .btn.web { background: var(--blue); border-color: transparent; color: #fff; }
+[data-device="ios"] .btn.web:hover,
+[data-device="desktop"] .btn.web:hover { background: var(--blue-hover); }
+.qr { display: flex; align-items: center; gap: 20px; margin-top: 28px; }
+.qr img { flex: none; padding: 8px; background: #fff; border-radius: 14px; }
+.qr p { margin: 0; max-width: 16em; color: var(--muted); font-size: 0.9375rem; }
 
 /* The receipt: the one memorable object */
 .stage { position: relative; display: grid; place-items: center; padding: 24px 0 40px; }
@@ -162,10 +180,19 @@ footer { padding: 36px 0 56px; border-top: 1px solid var(--line); color: var(--m
         <h1>Know exactly how long you’re covered.</h1>
         <p class="lead">Photograph a receipt. Warrantyly finds the warranty, counts it down, and reminds you before it ends.</p>
         <div class="actions">
-          <a class="btn primary" href="https://github.com/ahmedi56/warrantyly-/releases/latest/download/Warrantyly.apk">Download for Android</a>
-          <a class="btn secondary" href="https://warranty-9ze.pages.dev/">Use it in your browser</a>
+          <a class="btn primary apk" href="https://github.com/ahmedi56/warrantyly-/releases/latest/download/Warrantyly.apk">Download for Android</a>
+          <a class="btn secondary web" href="https://warranty-9ze.pages.dev/">Use it in your browser</a>
         </div>
-        <p class="fine">Free. The Android file is about 140 MB. On iPhone, use the browser version.</p>
+        <!-- One of these shows, depending on the device (see device.js). With no script, the first one shows. -->
+        <p class="fine fallback">Free. The Android file is about 140 MB. On iPhone, use the browser version.</p>
+        <p class="fine only only-android">Free. The Android file is about 140 MB. Android will warn you about apps from outside Google Play. The steps below explain.</p>
+        <p class="fine only only-ios">iPhone can’t install Android apps, so use the browser version. Open it in Safari, tap Share, then Add to Home Screen. Reminders only work in the Android app.</p>
+        <div class="only only-desktop">
+          <div class="qr">
+            <img src="/get/qr.svg" alt="QR code that opens this page on your phone" width="132" height="132">
+            <p>Scan this with your phone’s camera to get Warrantyly on your phone.</p>
+          </div>
+        </div>
       </div>
 
       <div class="stage" role="img" aria-label="A store receipt for a coffee machine with a stamp showing 684 days of warranty left">
